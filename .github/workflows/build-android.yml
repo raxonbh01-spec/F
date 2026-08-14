@@ -28,10 +28,19 @@ jobs:
             ninja-build \
             pkg-config
 
+      - name: Remove old NDK
+        run: |
+          sudo rm -rf $ANDROID_NDK_HOME || true
+
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r29
+
+      - name: Check NDK
+        run: |
+          echo "NDK: $ANDROID_NDK_HOME"
+          $ANDROID_NDK_HOME/ndk-build --version
 
       - name: Build Frida dependencies
         run: |
@@ -39,21 +48,19 @@ jobs:
 
       - name: Configure Android ARM64
         run: |
-          ./configure \
-            --host=android-arm64
+          ./configure --host=android-arm64
 
       - name: Compile
         run: |
           make -j$(nproc)
 
-      - name: Find outputs
+      - name: Locate binaries
         run: |
           find . -name "frida-server" -o -name "frida"
 
-      - name: Upload artifacts
+      - name: Upload frida-server
         uses: actions/upload-artifact@v4
         with:
           name: frida-android-arm64
           path: |
-            build/
             **/frida-server
