@@ -28,37 +28,30 @@ jobs:
             ninja-build \
             pkg-config
 
-      - name: Remove old NDK
+      - name: Install Android NDK r29
         run: |
-          sudo rm -rf $ANDROID_NDK_HOME || true
-
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r29
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "ndk;29.0.13846066"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/29.0.13846066" >> $GITHUB_ENV
 
       - name: Check NDK
         run: |
-          echo "NDK: $ANDROID_NDK_HOME"
-          $ANDROID_NDK_HOME/ndk-build --version
+          echo $ANDROID_NDK_HOME
+          ls $ANDROID_NDK_HOME
 
-      - name: Build Frida dependencies
+      - name: Build dependencies
         run: |
           ./releng/deps.py build --bundle=toolchain
 
-      - name: Configure Android ARM64
+      - name: Configure
         run: |
           ./configure --host=android-arm64
 
-      - name: Compile
+      - name: Build
         run: |
           make -j$(nproc)
 
-      - name: Locate binaries
-        run: |
-          find . -name "frida-server" -o -name "frida"
-
-      - name: Upload frida-server
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: frida-android-arm64
