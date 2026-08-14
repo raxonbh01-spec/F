@@ -1,0 +1,59 @@
+name: Build Frida Android ARM64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Frida 17.16.4
+        uses: actions/checkout@v4
+        with:
+          repository: frida/frida
+          ref: 17.16.4
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            python3 \
+            python3-pip \
+            git \
+            clang \
+            make \
+            cmake \
+            ninja-build \
+            pkg-config
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - name: Build Frida dependencies
+        run: |
+          ./releng/deps.py build --bundle=toolchain
+
+      - name: Configure Android ARM64
+        run: |
+          ./configure \
+            --host=android-arm64
+
+      - name: Compile
+        run: |
+          make -j$(nproc)
+
+      - name: Find outputs
+        run: |
+          find . -name "frida-server" -o -name "frida"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frida-android-arm64
+          path: |
+            build/
+            **/frida-server
